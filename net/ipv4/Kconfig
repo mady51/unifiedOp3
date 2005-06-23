@@ -491,6 +491,7 @@ config TCP_CONG_CUBIC
 
 config TCP_CONG_WESTWOOD
 	tristate "TCP Westwood+"
+	depends on INET
 	default m
 	---help---
 	TCP Westwood+ is a sender-side only modification of the TCP Reno
@@ -628,6 +629,7 @@ choice
 
 	config DEFAULT_BIC
 		bool "Bic" if TCP_CONG_BIC=y
+endmenu
 
 	config DEFAULT_CUBIC
 		bool "Cubic" if TCP_CONG_CUBIC=y
