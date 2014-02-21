@@ -1816,7 +1816,7 @@ static void do_sync_mmap_readahead(struct vm_area_struct *vma,
 	ra->start = max_t(long, 0, offset - ra_pages / 2);
 	ra->size = ra_pages;
 	ra->async_size = ra_pages / 4;
-	ra_submit(ra, mapping, file);
+/*	ra_submit(ra, mapping, file); */
 }
 
 /*

@@ -29,12 +29,6 @@ extern int __do_page_cache_readahead(struct address_space *mapping,
 /*
  * Submit IO for the read-ahead request in file_ra_state.
  */
-static inline unsigned long ra_submit(struct file_ra_state *ra,
-		struct address_space *mapping, struct file *filp)
-{
-	return __do_page_cache_readahead(mapping, filp,
-					ra->start, ra->size, ra->async_size);
-}
 
 /*
  * Turn a non-refcounted page (->_count == 0) into refcounted with
