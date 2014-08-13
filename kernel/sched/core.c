@@ -11089,7 +11089,7 @@ void normalize_rt_tasks(void)
 	unsigned long flags;
 	struct rq *rq;
 
-	read_lock(&tasklist_lock);
+	read_lock_irqsave(&tasklist_lock, flags);
 	for_each_process_thread(g, p) {
 		/*
 		 * Only normalize user tasks:
@@ -11116,9 +11116,11 @@ void normalize_rt_tasks(void)
 
 		rq = task_rq_lock(p, &flags);
 		normalize_task(rq, p);
-		task_rq_unlock(rq, p, &flags);
+
+		__task_rq_unlock(rq);
+		raw_spin_unlock(&p->pi_lock);
 	}
-	read_unlock(&tasklist_lock);
+	read_unlock_irqrestore(&tasklist_lock, flags);
 }
 
 #endif /* CONFIG_MAGIC_SYSRQ */
@@ -11309,14 +11311,8 @@ static inline int tg_has_rt_tasks(struct task_group *tg)
 {
 	struct task_struct *g, *p;
 
-	/*
-	 * Autogroups do not have RT tasks; see autogroup_create().
-	 */
-	if (task_group_is_autogroup(tg))
-		return 0;
-
 	for_each_process_thread(g, p) {
-		if (rt_task(p) && task_group(p) == tg)
+		if (rt_task(p) && task_rq(p)->rt.tg == tg)
 			return 1;
 	}
 
