@@ -2159,7 +2159,7 @@ static inline long calc_tg_weight(struct task_group *tg, struct cfs_rq *cfs_rq)
 	 * update_cfs_rq_load_contribution().
 	 */
 	tg_weight = atomic_long_read(&tg->load_avg);
-	tg_weight -= cfs_rq->tg_load_contrib;
+//	tg_weight -= cfs_rq->tg_load_avg_contrib;
 	tg_weight += cfs_rq->load.weight;
 
 	return tg_weight;
