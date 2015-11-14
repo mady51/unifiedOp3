@@ -15,7 +15,9 @@
 #include <linux/module.h>
 #include <linux/state_notifier.h>
 
-#define DEFAULT_SUSPEND_DEFER_TIME 	1
+#define DEFAULT_SUSPEND_DEFER_TIME 10
+#define DEFAULT_USE_FB_NOTIFIER 1
+#define DEFAULT_SUSPEND_DEFER_TIME 	10
 #define STATE_NOTIFIER			"state_notifier"
 
 /*
@@ -30,7 +32,7 @@ do {				\
 } while (0)
 
 static bool enabled = true;
-module_param_named(enabled, enabled, bool, 0444);
+module_param_named(enabled, enabled, bool, 0664);
 static unsigned int suspend_defer_time = DEFAULT_SUSPEND_DEFER_TIME;
 module_param_named(suspend_defer_time, suspend_defer_time, uint, 0664);
 static struct delayed_work suspend_work;
@@ -133,10 +135,7 @@ void state_boost(void)
 
 static int __init state_notifier_init(void)
 {
-	susp_wq =
-	    alloc_workqueue("state_susp_wq",
-			    WQ_HIGHPRI | WQ_UNBOUND | WQ_MEM_RECLAIM, 0);
-
+	susp_wq = create_singlethread_workqueue("state_susp_wq");
 	if (!susp_wq)
 		pr_err("State Notifier failed to allocate suspend workqueue\n");
 
