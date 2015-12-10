@@ -23,10 +23,14 @@
 #include <linux/input.h>
 #include <linux/time.h>
 
+#include "../../kernel/sched/sched.h"
+
 struct cpu_sync {
 	int cpu;
+	unsigned int boost_min;
 	unsigned int input_boost_min;
 	unsigned int input_boost_freq;
+	unsigned int nr_running;
 };
 
 static DEFINE_PER_CPU(struct cpu_sync, sync_info);
@@ -48,6 +52,8 @@ module_param(dynamic_stune_boost, uint, 0644);
 static struct delayed_work input_boost_rem;
 static u64 last_input_time;
 #define MIN_INPUT_INTERVAL (150 * USEC_PER_MSEC)
+
+static unsigned int cnt_nr_running;
 
 static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 {
@@ -124,18 +130,25 @@ static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
 	struct cpufreq_policy *policy = data;
 	unsigned int cpu = policy->cpu;
 	struct cpu_sync *s = &per_cpu(sync_info, cpu);
+	unsigned int b_min = s->boost_min;
 	unsigned int ib_min = s->input_boost_min;
+	unsigned int min;
 
 	switch (val) {
 	case CPUFREQ_ADJUST:
-		if (!ib_min)
+		if (!b_min && !ib_min)
 			break;
+
+		min = max(b_min, ib_min);
+
+		if (cpu == 4 && min > 0 && cnt_nr_running == 0)
+                        break;
 
 		pr_debug("CPU%u policy min before boost: %u kHz\n",
 			 cpu, policy->min);
-		pr_debug("CPU%u boost min: %u kHz\n", cpu, ib_min);
+		pr_debug("CPU%u boost min: %u kHz\n", cpu, min);
 
-		cpufreq_verify_within_limits(policy, ib_min, UINT_MAX);
+		cpufreq_verify_within_limits(policy, min, UINT_MAX);
 
 		pr_debug("CPU%u policy min after boost: %u kHz\n",
 			 cpu, policy->min);
@@ -156,8 +169,15 @@ static void update_policy_online(void)
 	/* Re-evaluate policy to trigger adjust notifier for online CPUs */
 	get_online_cpus();
 	for_each_online_cpu(i) {
+		/*
+		 * both clusters have synchronous cpus
+		 * no need to upldate the policy for each core
+		 * individually, saving at least one [down|up] write
+		 * and a [lock|unlock] irqrestore per pass
+		 */
 		pr_debug("Updating policy for CPU%d\n", i);
-		cpufreq_update_policy(i);
+		if (i == 0 || i == 4)
+			cpufreq_update_policy(i);
 	}
 	put_online_cpus();
 }
@@ -174,10 +194,7 @@ static void do_input_boost_rem(struct work_struct *work)
 		i_sync_info->input_boost_min = 0;
 	}
 
-#ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	/* Reset dynamic stune boost value to the default value */
-        dynamic_boost_write(topapp_css, default_topapp_boost);
-#endif /* CONFIG_DYNAMIC_STUNE_BOOST */
+	cnt_nr_running = 0;
 
 	/* Update policies for all online CPUs */
 	update_policy_online();
@@ -196,6 +213,9 @@ static void do_input_boost(struct work_struct *work)
 	for_each_possible_cpu(i) {
 		i_sync_info = &per_cpu(sync_info, i);
 		i_sync_info->input_boost_min = i_sync_info->input_boost_freq;
+
+		if (i >= 4)
+			cnt_nr_running += cpu_rq(i)->nr_running;
 	}
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
@@ -220,7 +240,7 @@ static void cpuboost_input_event(struct input_handle *handle,
 		return;
 
 	now = ktime_to_us(ktime_get());
-	if (now - last_input_time < MIN_INPUT_INTERVAL)
+	if (now - last_input_time < (input_boost_ms * USEC_PER_MSEC))
 		return;
 
 	if (work_pending(&input_boost_work))
