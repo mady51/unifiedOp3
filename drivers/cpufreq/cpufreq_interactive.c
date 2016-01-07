@@ -1896,6 +1896,14 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		}
 		up_read(&ppol->enable_sem);
 
+		if (anyboost) {
+			u64 now = ktime_to_us(ktime_get());
+
+			ppol->hispeed_validate_time = now;
+			ppol->floor_freq = policy->min;
+			ppol->floor_validate_time = now;
+		}
+
 		break;
 	}
 	return 0;
