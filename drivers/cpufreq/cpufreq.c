@@ -2155,7 +2155,15 @@ int __cpufreq_driver_target(struct cpufreq_policy *policy,
 		retval = __target_index(policy, freq_table, index);
 	}
 
-out:
+	/*
+	 * This might look like a redundant call as we are checking it again
+	 * after finding index. But it is left intentionally for cases where
+	 * exactly same freq is called again and so we can save on few function
+	 * calls.
+	 */
+	if (target_freq == policy->cur)
+		retval = 0;
+
 	return retval;
 }
 EXPORT_SYMBOL_GPL(__cpufreq_driver_target);
