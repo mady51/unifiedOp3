@@ -1339,28 +1339,16 @@ static int __cpuinit cpu_pmu_notify(struct notifier_block *b,
 {
 	int cpu = (unsigned long)hcpu;
 	struct arm_pmu *pmu = container_of(b, struct arm_pmu, hotplug_nb);
+	if ((action & ~CPU_TASKS_FROZEN) != CPU_STARTING)
+		return NOTIFY_DONE;
+	if (!cpumask_test_cpu(cpu, cpu_online_mask))
+		return NOTIFY_DONE;
 
-	switch (action & ~CPU_TASKS_FROZEN) {
-	case CPU_DOWN_PREPARE:
-		if (pmu->percpu_irq_requested) {
-			int irq = pmu->percpu_irq;
-			smp_call_function_single(cpu,
-				armpmu_disable_percpu_irq, &irq, 1);
-		}
-		break;
-
-	case CPU_STARTING:
-	case CPU_DOWN_FAILED:
-		if (pmu->reset)
-			pmu->reset(pmu);
-		if (pmu->percpu_irq_requested) {
-			int irq = pmu->percpu_irq;
-			smp_call_function_single(cpu,
-				armpmu_enable_percpu_irq, &irq, 1);
-		}
-		break;
-	}
-	return NOTIFY_DONE;
+	if (pmu->reset)
+		cpu_pmu->reset(pmu);
+	else
+		return NOTIFY_DONE;
+	return NOTIFY_OK;
 }
 
 #ifdef CONFIG_CPU_PM
@@ -1389,19 +1377,8 @@ static void cpu_pm_pmu_setup(struct arm_pmu *armpmu, unsigned long cmd)
 			break;
 		case CPU_PM_EXIT:
 		case CPU_PM_ENTER_FAILED:
-			/*
-			 * Restore and enable the counter.
-			 * armpmu_start() indirectly calls
-			 *
-			 * perf_event_update_userpage()
-			 *
-			 * that requires RCU read locking to be functional,
-			 * wrap the call within RCU_NONIDLE to make the
-			 * RCU subsystem aware this cpu is not idle from
-			 * an RCU perspective for the armpmu_start() call
-			 * duration.
-			 */
-			RCU_NONIDLE(armpmu_start(event, PERF_EF_RELOAD));
+			/* Restore and enable the counter */
+			armpmu_start(event, PERF_EF_RELOAD);
 			break;
 		default:
 			break;
