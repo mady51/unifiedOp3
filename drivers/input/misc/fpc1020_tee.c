@@ -323,11 +323,11 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *dev_id)
 		__pm_wakeup_event(&f->ttw_ws, FPC_TTW_HOLD_TIME_MS);
 
 	/* Report button input to trigger CPU boost */
-	input_report_key(fpc1020->input_dev, KEY_FINGERPRINT, 1);
+/*	input_report_key(fpc1020->input_dev, KEY_FINGERPRINT, 1);
 	input_sync(fpc1020->input_dev);
 	input_report_key(fpc1020->input_dev, KEY_FINGERPRINT, 0);
 	input_sync(fpc1020->input_dev);
-
+*/
 	return IRQ_HANDLED;
 }
 
