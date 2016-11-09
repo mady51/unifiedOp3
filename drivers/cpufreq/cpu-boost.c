@@ -46,7 +46,6 @@ module_param(dynamic_stune_boost, uint, 0644);
 
 static struct delayed_work input_boost_rem;
 static u64 last_input_time;
-#define MIN_INPUT_INTERVAL (150 * USEC_PER_MSEC)
 
 static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 {
@@ -139,6 +138,11 @@ static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
 		if (!ib_min)
 			break;
 
+		ib_min = min(ib_min, policy->max);
+
+		if (policy->cur >= ib_min)
+			break;
+
 		pr_debug("CPU%u policy min before boost: %u kHz\n",
 			 cpu, policy->min);
 		pr_debug("CPU%u boost min: %u kHz\n", cpu, ib_min);
@@ -205,6 +209,9 @@ static void do_input_boost(struct work_struct *work)
 	unsigned int i;
 	struct cpu_sync *i_sync_info;
 
+	if (!input_boost_ms)
+		return;
+
 	cancel_delayed_work_sync(&input_boost_rem);
 
 	/* Set the input_boost_min for all CPUs in the system */
@@ -235,7 +242,7 @@ static void cpuboost_input_event(struct input_handle *handle,
 		return;
 
 	now = ktime_to_us(ktime_get());
-	if (now - last_input_time < MIN_INPUT_INTERVAL)
+	if ((now - last_input_time) < (input_boost_ms * USEC_PER_MSEC))
 		return;
 
 	if (work_pending(&input_boost_work))
