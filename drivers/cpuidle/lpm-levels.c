@@ -1178,14 +1178,6 @@ static int cluster_configure(struct lpm_cluster *cluster, int idx,
 
 	cluster->last_level = idx;
 
-	if (predicted && (idx < (cluster->nlevels - 1))) {
-		struct power_params *pwr_params = &cluster->levels[idx].pwr;
-
-		tick_broadcast_exit();
-		clusttimer_start(cluster, pwr_params->max_residency + tmr_add);
-		tick_broadcast_enter();
-	}
-
 	return 0;
 
 failed_set_mode:
@@ -1246,10 +1238,8 @@ static void cluster_prepare(struct lpm_cluster *cluster,
 			struct power_params *pwr_params =
 						&cluster->levels[0].pwr;
 
-			tick_broadcast_exit();
 			clusttimer_start(cluster,
 					pwr_params->max_residency + tmr_add);
-			tick_broadcast_enter();
 		}
 	}
 
