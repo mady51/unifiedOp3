@@ -109,6 +109,8 @@ struct cpufreq_policy {
 	 */
 	struct rw_semaphore	rwsem;
 
+	unsigned int util;
+
 	/* Synchronization for frequency transitions */
 	bool			transition_ongoing; /* Tracks transition status */
 	spinlock_t		transition_lock;
@@ -263,6 +265,10 @@ struct cpufreq_driver {
 
 	/* should be defined, if possible */
 	unsigned int	(*get)(unsigned int cpu);
+
+	/* optional */
+	unsigned int (*getavg)	(struct cpufreq_policy *policy,
+                            unsigned int cpu);
 
 	/* optional */
 	int		(*bios_limit)(int cpu, unsigned int *limit);
