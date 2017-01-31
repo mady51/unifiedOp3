@@ -216,10 +216,10 @@ static void update_policy_online(void)
 		 * individually, saving at least one [down|up] write
 		 * and a [lock|unlock] irqrestore per pass
 		 */
-		if ((i & 1) == 0) {
+		if (i > 1) 
+			continue;
 			pr_debug("Updating policy for CPU%d\n", i);
 			cpufreq_update_policy(i);
-		}
 	}
 	put_online_cpus();
 }
