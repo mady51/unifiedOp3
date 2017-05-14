@@ -44,7 +44,7 @@
  */
 
 // NOTE: profile values in this version are mainly for Snapdragon devices!
-static char profiles_file_version[20] = "develop-24.09.15";
+static char profiles_file_version[20] = "develop";
 #define PROFILE_TABLE_END ~1
 #define END_OF_PROFILES "end"
 #define PROFILE_MAX_FREQ (2457600)	// ZZ: max possible freq in system table for freq adaption (possible OC frequencies inclusive)
@@ -1761,8 +1761,8 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		3,		// inputboost_typingbooster_cores
 #endif /* ENABLE_INPUTBOOSTER */
 #ifdef ENABLE_MUSIC_LIMITS
-		1200000,	// music_max_freq
-		312000,		// music_min_freq
+		1497600,	// music_max_freq
+		422400,		// music_min_freq
 		2,		// music_min_cores
 #endif /* ENABLE_MUSIC_LIMITS */
 		60,		// smooth_up
