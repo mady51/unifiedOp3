@@ -176,7 +176,7 @@ root_schedtune = {
 	.perf_constrain_idx = 0,
 	.prefer_idle = 0,
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	.boost_default = 0,
+	.boost_default = 1,
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 };
 
