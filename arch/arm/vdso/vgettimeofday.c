@@ -119,9 +119,28 @@ static notrace int do_monotonic_coarse(struct timespec *ts,
 
 static notrace u64 get_ns(struct vdso_data *vdata)
 {
-	u64 cycle_delta;
-	u64 cycle_now;
-	u64 nsec;
+	u32 seq, mult, shift;
+	u64 nsec, cycle_last;
+#ifdef ARCH_CLOCK_FIXED_MASK
+	static const u64 mask = ARCH_CLOCK_FIXED_MASK;
+#else
+	u64 mask;
+#endif
+	vdso_xtime_clock_sec_t sec;
+
+	do {
+		seq = vdso_read_begin(vd);
+
+		if (vd->use_syscall)
+			return -1;
+
+		cycle_last = vd->cs_cycle_last;
+
+		mult = vd->cs_mono_mult;
+		shift = vd->cs_shift;
+#ifndef ARCH_CLOCK_FIXED_MASK
+		mask = vd->cs_mask;
+#endif
 
 	cycle_now = arch_counter_get_cntvct();
 
@@ -135,8 +154,15 @@ static notrace u64 get_ns(struct vdso_data *vdata)
 
 static notrace int do_realtime(struct timespec *ts, struct vdso_data *vdata)
 {
-	u64 nsecs;
-	u32 seq;
+	u32 seq, mult, shift;
+	u64 nsec, cycle_last;
+#ifdef ARCH_CLOCK_FIXED_MASK
+	static const u64 mask = ARCH_CLOCK_FIXED_MASK;
+#else
+	u64 mask;
+#endif
+	vdso_wtm_clock_nsec_t wtm_nsec;
+	__kernel_time_t sec;
 
 	do {
 		seq = vdso_read_begin(vdata);
@@ -144,8 +170,19 @@ static notrace int do_realtime(struct timespec *ts, struct vdso_data *vdata)
 		if (!vdata->tk_is_cntvct)
 			return -1;
 
-		ts->tv_sec = vdata->xtime_clock_sec;
-		nsecs = get_ns(vdata);
+		cycle_last = vd->cs_cycle_last;
+
+		mult = vd->cs_mono_mult;
+		shift = vd->cs_shift;
+#ifndef ARCH_CLOCK_FIXED_MASK
+		mask = vd->cs_mask;
+#endif
+
+		sec = vd->xtime_clock_sec;
+		nsec = vd->xtime_clock_snsec;
+
+		sec += vd->wtm_clock_sec;
+		wtm_nsec = vd->wtm_clock_nsec;
 
 	} while (vdso_read_retry(vdata, seq));
 
@@ -157,9 +194,14 @@ static notrace int do_realtime(struct timespec *ts, struct vdso_data *vdata)
 
 static notrace int do_monotonic(struct timespec *ts, struct vdso_data *vdata)
 {
-	struct timespec tomono;
-	u64 nsecs;
-	u32 seq;
+	u32 seq, mult, shift;
+	u64 nsec, cycle_last;
+#ifdef ARCH_CLOCK_FIXED_MASK
+	static const u64 mask = ARCH_CLOCK_FIXED_MASK;
+#else
+	u64 mask;
+#endif
+	vdso_raw_time_sec_t sec;
 
 	do {
 		seq = vdso_read_begin(vdata);
@@ -170,8 +212,11 @@ static notrace int do_monotonic(struct timespec *ts, struct vdso_data *vdata)
 		ts->tv_sec = vdata->xtime_clock_sec;
 		nsecs = get_ns(vdata);
 
-		tomono.tv_sec = vdata->wtm_clock_sec;
-		tomono.tv_nsec = vdata->wtm_clock_nsec;
+		mult = vd->cs_raw_mult;
+		shift = vd->cs_shift;
+#ifndef ARCH_CLOCK_FIXED_MASK
+		mask = vd->cs_mask;
+#endif
 
 	} while (vdso_read_retry(vdata, seq));
 
