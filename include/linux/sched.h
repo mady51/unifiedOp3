@@ -3303,9 +3303,7 @@ void cpufreq_remove_update_util_hook(int cpu);
 #endif /* CONFIG_CPU_FREQ */
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-extern int default_topapp_boost;
-extern struct cgroup_subsys_state *topapp_css;
-int dynamic_boost_write(struct cgroup_subsys_state *css, int boost);
+extern int sched_dynamic_stune_boost;
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 #endif
