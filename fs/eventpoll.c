@@ -1245,6 +1245,8 @@ static int ep_create_wakeup_source(struct epitem *epi)
 
 	get_task_comm(task_comm_buf, current);
 
+	get_task_comm(task_comm_buf, current);
+
 	name = epi->ffd.file->f_path.dentry->d_name.name;
 	if (!epi->ep->ws) {
 		epi->ep->ws = wakeup_source_register("eventpoll");
