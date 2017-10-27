@@ -825,23 +825,27 @@ static ssize_t mdss_fb_get_dfps_mode(struct device *dev,
 	return ret;
 }
 
-static ssize_t mdss_fb_get_acl(struct device *dev,
+static ssize_t mdss_fb_get_ACL(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct fb_info *fbi = dev_get_drvdata(dev);
 	struct msm_fb_data_type *mfd = fbi->par;
-	int ret;
-	int acl_mode;
+	int ret, acl_mode;
 
 	acl_mode = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_ACL,
 			NULL);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", acl_mode);
+	ret = scnprintf(buf, PAGE_SIZE, "ACL current mode: %d\n"
+					"0--ACL OFF\n"
+					"1--ACL 50\n"
+					"2--ALC 40\n"
+					"3--ACL 30\n",
+					acl_mode);
 
 	return ret;
 }
 
-static ssize_t mdss_fb_set_acl(struct device *dev,
+static ssize_t mdss_fb_set_ACL(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct fb_info *fbi = dev_get_drvdata(dev);
@@ -867,7 +871,7 @@ static ssize_t mdss_fb_set_acl(struct device *dev,
 }
 
 static DEVICE_ATTR(acl, S_IRUGO | S_IWUSR | S_IWGRP,
-	mdss_fb_get_acl, mdss_fb_set_acl);
+	mdss_fb_get_ACL, mdss_fb_set_ACL);
 
 static ssize_t mdss_fb_get_max_brightness(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -880,7 +884,11 @@ static ssize_t mdss_fb_get_max_brightness(struct device *dev,
 	level = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_MAX_BRIGHTNESS,
 			NULL);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", level & 0x000F);
+	ret = scnprintf(buf, PAGE_SIZE, "max brightness level = %d\n"
+					"0-->max brightness level 380nit\n"
+					"1-->max brightness level 430nit\n"
+					"2-->HBM Enabled\n",
+					level & 0x000F);
 	return ret;
 }
 
@@ -921,7 +929,10 @@ static ssize_t mdss_fb_get_srgb_mode(struct device *dev,
 	level = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_SRGB_MODE,
 			NULL);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", level);
+	ret = scnprintf(buf, PAGE_SIZE, "mode = %d\n"
+					"0-->sRGB Mode OFF\n"
+					"1-->sRGB Mode ON\n",
+					level);
 
 	return ret;
 }
@@ -948,7 +959,7 @@ static ssize_t mdss_fb_set_srgb_mode(struct device *dev,
 	return count;
 }
 
-static DEVICE_ATTR(srgb, S_IRUGO | S_IWUSR,
+static DEVICE_ATTR(SRGB, S_IRUGO | S_IWUSR,
 	mdss_fb_get_srgb_mode, mdss_fb_set_srgb_mode);
 
 static ssize_t mdss_fb_get_adobe_rgb_mode(struct device *dev,
@@ -962,7 +973,10 @@ static ssize_t mdss_fb_get_adobe_rgb_mode(struct device *dev,
 	level = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_ADOBE_RGB_MODE,
 			NULL);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", level);
+	ret = scnprintf(buf, PAGE_SIZE, "mode = %d\n"
+					"0-->Adobe RGB Mode OFF\n"
+					"1-->Adobe RGB Mode ON\n",
+					level);
 
 	return ret;
 }
@@ -989,7 +1003,7 @@ static ssize_t mdss_fb_set_adobe_rgb_mode(struct device *dev,
 	return count;
 }
 
-static DEVICE_ATTR(adobe_rgb, S_IRUGO | S_IWUSR,
+static DEVICE_ATTR(Adobe_RGB, S_IRUGO | S_IWUSR,
 	mdss_fb_get_adobe_rgb_mode, mdss_fb_set_adobe_rgb_mode);
 
 static ssize_t mdss_fb_get_dci_p3_mode(struct device *dev,
@@ -1003,7 +1017,10 @@ static ssize_t mdss_fb_get_dci_p3_mode(struct device *dev,
 	level = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_DCI_P3_MODE,
 			NULL);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", level);
+	ret = scnprintf(buf, PAGE_SIZE, "mode = %d\n"
+					"0-->DCI-P3 Mode OFF\n"
+					"1-->DCI-P3 Mode ON\n",
+					level);
 
 	return ret;
 }
@@ -1030,7 +1047,7 @@ static ssize_t mdss_fb_set_dci_p3_mode(struct device *dev,
 	return count;
 }
 
-static DEVICE_ATTR(dci_p3, S_IRUGO | S_IWUSR,
+static DEVICE_ATTR(DCI_P3, S_IRUGO | S_IWUSR,
 	mdss_fb_get_dci_p3_mode, mdss_fb_set_dci_p3_mode);
 
 static ssize_t mdss_fb_get_night_mode(struct device *dev,
@@ -1044,8 +1061,10 @@ static ssize_t mdss_fb_get_night_mode(struct device *dev,
 	level = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_NIGHT_MODE,
 			NULL);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", level);
-
+	ret = scnprintf(buf, PAGE_SIZE, "mode = %d\n"
+					"0-->Night Mode OFF\n"
+					"1-->Night Mode ON\n",
+					level);
 	return ret;
 }
 
@@ -1085,7 +1104,10 @@ static ssize_t mdss_fb_get_oneplus_mode(struct device *dev,
 	level = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_ONEPLUS_MODE,
 			NULL);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", level);
+	ret = scnprintf(buf, PAGE_SIZE, "mode = %d\n"
+					"0-->Oneplus Mode OFF\n"
+					"1-->Oneplus Mode ON\n",
+					level);
 
 	return ret;
 }
@@ -1217,9 +1239,9 @@ static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_msm_fb_persist_mode.attr,
 	&dev_attr_acl.attr,
 	&dev_attr_hbm.attr,
-	&dev_attr_srgb.attr,
-	&dev_attr_adobe_rgb.attr,
-	&dev_attr_dci_p3.attr,
+	&dev_attr_SRGB.attr,
+	&dev_attr_Adobe_RGB.attr,
+	&dev_attr_DCI_P3.attr,
 	&dev_attr_night_mode.attr,
 	&dev_attr_oneplus_mode.attr,
 	NULL,
