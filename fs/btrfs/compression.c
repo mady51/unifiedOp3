@@ -32,6 +32,8 @@
 #include <linux/writeback.h>
 #include <linux/bit_spinlock.h>
 #include <linux/slab.h>
+#include <linux/sched/mm.h>
+#include <linux/log2.h>
 #include "ctree.h"
 #include "disk-io.h"
 #include "transaction.h"
@@ -738,13 +740,108 @@ out:
 	return ret;
 }
 
-static struct list_head comp_idle_workspace[BTRFS_COMPRESS_TYPES];
-static spinlock_t comp_workspace_lock[BTRFS_COMPRESS_TYPES];
-static int comp_num_workspace[BTRFS_COMPRESS_TYPES];
-static atomic_t comp_alloc_workspace[BTRFS_COMPRESS_TYPES];
-static wait_queue_head_t comp_workspace_wait[BTRFS_COMPRESS_TYPES];
+/*
+ * Heuristic uses systematic sampling to collect data from the input data
+ * range, the logic can be tuned by the following constants:
+ *
+ * @SAMPLING_READ_SIZE - how many bytes will be copied from for each sample
+ * @SAMPLING_INTERVAL  - range from which the sampled data can be collected
+ */
+#define SAMPLING_READ_SIZE	(16)
+#define SAMPLING_INTERVAL	(256)
 
-static struct btrfs_compress_op *btrfs_compress_op[] = {
+/*
+ * For statistical analysis of the input data we consider bytes that form a
+ * Galois Field of 256 objects. Each object has an attribute count, ie. how
+ * many times the object appeared in the sample.
+ */
+#define BUCKET_SIZE		(256)
+
+/*
+ * The size of the sample is based on a statistical sampling rule of thumb.
+ * The common way is to perform sampling tests as long as the number of
+ * elements in each cell is at least 5.
+ *
+ * Instead of 5, we choose 32 to obtain more accurate results.
+ * If the data contain the maximum number of symbols, which is 256, we obtain a
+ * sample size bound by 8192.
+ *
+ * For a sample of at most 8KB of data per data range: 16 consecutive bytes
+ * from up to 512 locations.
+ */
+#define MAX_SAMPLE_SIZE		(BTRFS_MAX_UNCOMPRESSED *		\
+				 SAMPLING_READ_SIZE / SAMPLING_INTERVAL)
+
+struct bucket_item {
+	u32 count;
+};
+
+struct heuristic_ws {
+	/* Partial copy of input data */
+	u8 *sample;
+	u32 sample_size;
+	/* Buckets store counters for each byte value */
+	struct bucket_item *bucket;
+	/* Sorting buffer */
+	struct bucket_item *bucket_b;
+	struct list_head list;
+};
+
+static void free_heuristic_ws(struct list_head *ws)
+{
+	struct heuristic_ws *workspace;
+
+	workspace = list_entry(ws, struct heuristic_ws, list);
+
+	kvfree(workspace->sample);
+	kfree(workspace->bucket);
+	kfree(workspace->bucket_b);
+	kfree(workspace);
+}
+
+static struct list_head *alloc_heuristic_ws(void)
+{
+	struct heuristic_ws *ws;
+
+	ws = kzalloc(sizeof(*ws), GFP_KERNEL);
+	if (!ws)
+		return ERR_PTR(-ENOMEM);
+
+	ws->sample = kvmalloc(MAX_SAMPLE_SIZE, GFP_KERNEL);
+	if (!ws->sample)
+		goto fail;
+
+	ws->bucket = kcalloc(BUCKET_SIZE, sizeof(*ws->bucket), GFP_KERNEL);
+	if (!ws->bucket)
+		goto fail;
+
+	ws->bucket_b = kcalloc(BUCKET_SIZE, sizeof(*ws->bucket_b), GFP_KERNEL);
+	if (!ws->bucket_b)
+		goto fail;
+
+	INIT_LIST_HEAD(&ws->list);
+	return &ws->list;
+fail:
+	free_heuristic_ws(&ws->list);
+	return ERR_PTR(-ENOMEM);
+}
+
+struct workspaces_list {
+	struct list_head idle_ws;
+	spinlock_t ws_lock;
+	/* Number of free workspaces */
+	int free_ws;
+	/* Total number of allocated workspaces */
+	atomic_t total_ws;
+	/* Waiters for a free workspace */
+	wait_queue_head_t ws_wait;
+};
+
+static struct workspaces_list btrfs_comp_ws[BTRFS_COMPRESS_TYPES];
+
+static struct workspaces_list btrfs_heuristic_ws;
+
+static const struct btrfs_compress_op * const btrfs_compress_op[] = {
 	&btrfs_zlib_compress,
 	&btrfs_lzo_compress,
 };
@@ -1054,15 +1151,268 @@ int btrfs_decompress_buf2page(char *buf, unsigned long buf_start,
 }
 
 /*
- * When uncompressing data, we need to make sure and zero any parts of
- * the biovec that were not filled in by the decompression code.  pg_index
- * and pg_offset indicate the last page and the last offset of that page
- * that have been filled in.  This will zero everything remaining in the
- * biovec.
+ * Pure byte distribution analysis fails to determine compressiability of data.
+ * Try calculating entropy to estimate the average minimum number of bits
+ * needed to encode the sampled data.
+ *
+ * For convenience, return the percentage of needed bits, instead of amount of
+ * bits directly.
+ *
+ * @ENTROPY_LVL_ACEPTABLE - below that threshold, sample has low byte entropy
+ *			    and can be compressible with high probability
+ *
+ * @ENTROPY_LVL_HIGH - data are not compressible with high probability
+ *
+ * Use of ilog2() decreases precision, we lower the LVL to 5 to compensate.
  */
-void btrfs_clear_biovec_end(struct bio_vec *bvec, int vcnt,
-				   unsigned long pg_index,
-				   unsigned long pg_offset)
+#define ENTROPY_LVL_ACEPTABLE		(65)
+#define ENTROPY_LVL_HIGH		(80)
+
+/*
+ * For increasead precision in shannon_entropy calculation,
+ * let's do pow(n, M) to save more digits after comma:
+ *
+ * - maximum int bit length is 64
+ * - ilog2(MAX_SAMPLE_SIZE)	-> 13
+ * - 13 * 4 = 52 < 64		-> M = 4
+ *
+ * So use pow(n, 4).
+ */
+static inline u32 ilog2_w(u64 n)
+{
+	return ilog2(n * n * n * n);
+}
+
+static u32 shannon_entropy(struct heuristic_ws *ws)
+{
+	const u32 entropy_max = 8 * ilog2_w(2);
+	u32 entropy_sum = 0;
+	u32 p, p_base, sz_base;
+	u32 i;
+
+	sz_base = ilog2_w(ws->sample_size);
+	for (i = 0; i < BUCKET_SIZE && ws->bucket[i].count > 0; i++) {
+		p = ws->bucket[i].count;
+		p_base = ilog2_w(p);
+		entropy_sum += p * (sz_base - p_base);
+	}
+
+	entropy_sum /= ws->sample_size;
+	return entropy_sum * 100 / entropy_max;
+}
+
+#define RADIX_BASE		4U
+#define COUNTERS_SIZE		(1U << RADIX_BASE)
+
+static u8 get4bits(u64 num, int shift) {
+	u8 low4bits;
+
+	num >>= shift;
+	/* Reverse order */
+	low4bits = (COUNTERS_SIZE - 1) - (num % COUNTERS_SIZE);
+	return low4bits;
+}
+
+static void copy_cell(void *dst, int dest_i, void *src, int src_i)
+{
+	struct bucket_item *dstv = (struct bucket_item *)dst;
+	struct bucket_item *srcv = (struct bucket_item *)src;
+	dstv[dest_i] = srcv[src_i];
+}
+
+static u64 get_num(const void *a, int i)
+{
+	struct bucket_item *av = (struct bucket_item *)a;
+	return av[i].count;
+}
+
+/*
+ * Use 4 bits as radix base
+ * Use 16 u32 counters for calculating new possition in buf array
+ *
+ * @array     - array that will be sorted
+ * @array_buf - buffer array to store sorting results
+ *              must be equal in size to @array
+ * @num       - array size
+ * @get_num   - function to extract number from array
+ * @copy_cell - function to copy data from array to array_buf and vice versa
+ * @get4bits  - function to get 4 bits from number at specified offset
+ */
+static void radix_sort(void *array, void *array_buf, int num,
+		       u64 (*get_num)(const void *, int i),
+		       void (*copy_cell)(void *dest, int dest_i,
+					 void* src, int src_i),
+		       u8 (*get4bits)(u64 num, int shift))
+{
+	u64 max_num;
+	u64 buf_num;
+	u32 counters[COUNTERS_SIZE];
+	u32 new_addr;
+	u32 addr;
+	int bitlen;
+	int shift;
+	int i;
+
+	/*
+	 * Try avoid useless loop iterations for small numbers stored in big
+	 * counters.  Example: 48 33 4 ... in 64bit array
+	 */
+	max_num = get_num(array, 0);
+	for (i = 1; i < num; i++) {
+		buf_num = get_num(array, i);
+		if (buf_num > max_num)
+			max_num = buf_num;
+	}
+
+	buf_num = ilog2(max_num);
+	bitlen = ALIGN(buf_num, RADIX_BASE * 2);
+
+	shift = 0;
+	while (shift < bitlen) {
+		memset(counters, 0, sizeof(counters));
+
+		for (i = 0; i < num; i++) {
+			buf_num = get_num(array, i);
+			addr = get4bits(buf_num, shift);
+			counters[addr]++;
+		}
+
+		for (i = 1; i < COUNTERS_SIZE; i++)
+			counters[i] += counters[i - 1];
+
+		for (i = num - 1; i >= 0; i--) {
+			buf_num = get_num(array, i);
+			addr = get4bits(buf_num, shift);
+			counters[addr]--;
+			new_addr = counters[addr];
+			copy_cell(array_buf, new_addr, array, i);
+		}
+
+		shift += RADIX_BASE;
+
+		/*
+		 * Normal radix expects to move data from a temporary array, to
+		 * the main one.  But that requires some CPU time. Avoid that
+		 * by doing another sort iteration to original array instead of
+		 * memcpy()
+		 */
+		memset(counters, 0, sizeof(counters));
+
+		for (i = 0; i < num; i ++) {
+			buf_num = get_num(array_buf, i);
+			addr = get4bits(buf_num, shift);
+			counters[addr]++;
+		}
+
+		for (i = 1; i < COUNTERS_SIZE; i++)
+			counters[i] += counters[i - 1];
+
+		for (i = num - 1; i >= 0; i--) {
+			buf_num = get_num(array_buf, i);
+			addr = get4bits(buf_num, shift);
+			counters[addr]--;
+			new_addr = counters[addr];
+			copy_cell(array, new_addr, array_buf, i);
+		}
+
+		shift += RADIX_BASE;
+	}
+}
+
+/*
+ * Size of the core byte set - how many bytes cover 90% of the sample
+ *
+ * There are several types of structured binary data that use nearly all byte
+ * values. The distribution can be uniform and counts in all buckets will be
+ * nearly the same (eg. encrypted data). Unlikely to be compressible.
+ *
+ * Other possibility is normal (Gaussian) distribution, where the data could
+ * be potentially compressible, but we have to take a few more steps to decide
+ * how much.
+ *
+ * @BYTE_CORE_SET_LOW  - main part of byte values repeated frequently,
+ *                       compression algo can easy fix that
+ * @BYTE_CORE_SET_HIGH - data have uniform distribution and with high
+ *                       probability is not compressible
+ */
+#define BYTE_CORE_SET_LOW		(64)
+#define BYTE_CORE_SET_HIGH		(200)
+
+static int byte_core_set_size(struct heuristic_ws *ws)
+{
+	u32 i;
+	u32 coreset_sum = 0;
+	const u32 core_set_threshold = ws->sample_size * 90 / 100;
+	struct bucket_item *bucket = ws->bucket;
+
+	/* Sort in reverse order */
+	radix_sort(ws->bucket, ws->bucket_b, BUCKET_SIZE, get_num, copy_cell,
+			get4bits);
+
+	for (i = 0; i < BYTE_CORE_SET_LOW; i++)
+		coreset_sum += bucket[i].count;
+
+	if (coreset_sum > core_set_threshold)
+		return i;
+
+	for (; i < BYTE_CORE_SET_HIGH && bucket[i].count > 0; i++) {
+		coreset_sum += bucket[i].count;
+		if (coreset_sum > core_set_threshold)
+			break;
+	}
+
+	return i;
+}
+
+/*
+ * Count byte values in buckets.
+ * This heuristic can detect textual data (configs, xml, json, html, etc).
+ * Because in most text-like data byte set is restricted to limited number of
+ * possible characters, and that restriction in most cases makes data easy to
+ * compress.
+ *
+ * @BYTE_SET_THRESHOLD - consider all data within this byte set size:
+ *	less - compressible
+ *	more - need additional analysis
+ */
+#define BYTE_SET_THRESHOLD		(64)
+
+static u32 byte_set_size(const struct heuristic_ws *ws)
+{
+	u32 i;
+	u32 byte_set_size = 0;
+
+	for (i = 0; i < BYTE_SET_THRESHOLD; i++) {
+		if (ws->bucket[i].count > 0)
+			byte_set_size++;
+	}
+
+	/*
+	 * Continue collecting count of byte values in buckets.  If the byte
+	 * set size is bigger then the threshold, it's pointless to continue,
+	 * the detection technique would fail for this type of data.
+	 */
+	for (; i < BUCKET_SIZE; i++) {
+		if (ws->bucket[i].count > 0) {
+			byte_set_size++;
+			if (byte_set_size > BYTE_SET_THRESHOLD)
+				return byte_set_size;
+		}
+	}
+
+	return byte_set_size;
+}
+
+static bool sample_repeated_patterns(struct heuristic_ws *ws)
+{
+	const u32 half_of_sample = ws->sample_size / 2;
+	const u8 *data = ws->sample;
+
+	return memcmp(&data[0], &data[half_of_sample], half_of_sample) == 0;
+}
+
+static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
+				     struct heuristic_ws *ws)
 {
 	while (pg_index < vcnt) {
 		struct page *page = bvec[pg_index].bv_page;
