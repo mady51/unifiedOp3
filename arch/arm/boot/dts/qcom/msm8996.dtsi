@@ -4071,6 +4071,17 @@
 	status = "ok";
 };
 
+&firmware {
+	android {
+		fstab {
+			/delete-node/ vendor;
+			system {
+				dev = "/dev/block/platform/soc/624000.ufshc/by-name/system";
+			};
+		};
+	};
+};
+
 #include "msm-pm8994-rpm-regulator.dtsi"
 #include "msm-pm8994.dtsi"
 #include "msm-pmi8994.dtsi"
