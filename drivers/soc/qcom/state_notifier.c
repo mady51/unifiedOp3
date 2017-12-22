@@ -29,7 +29,6 @@ do {				\
 		pr_info(msg);	\
 } while (0)
 
-static bool enabled = true;
 static unsigned int suspend_defer_time = DEFAULT_SUSPEND_DEFER_TIME;
 module_param_named(suspend_defer_time, suspend_defer_time, uint, 0664);
 static struct delayed_work suspend_work;
