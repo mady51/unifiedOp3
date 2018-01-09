@@ -30,6 +30,7 @@
 #include <linux/hrtimer.h>
 #include <linux/workqueue.h>
 #include <linux/kthread.h>
+#include <linux/display_state.h>
 #include <linux/slab.h>
 
 #define CREATE_TRACE_POINTS
