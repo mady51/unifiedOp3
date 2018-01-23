@@ -15,20 +15,15 @@
 #include <linux/seq_file.h>
 #include <linux/debugfs.h>
 #include <linux/types.h>
-#include <linux/wakeup_reason.h>
 #include <trace/events/power.h>
 
 #include "power.h"
 
 
 #ifdef CONFIG_BOEFFLA_WL_BLOCKER
-#include "boeffla_wl_blocker.h"
-
-char list_wl_search[LENGTH_LIST_WL_SEARCH] = {0};
+char list_wl_search[257];
 bool wl_blocker_active = false;
 bool wl_blocker_debug = false;
-
-static void wakeup_source_deactivate(struct wakeup_source *ws);
 #endif
 
 
@@ -456,8 +451,7 @@ static void wakeup_source_activate(struct wakeup_source *ws)
 // AP: Function to check if a wakelock is on the wakelock blocker list
 static bool check_for_block(struct wakeup_source *ws)
 {
-	char wakelock_name[52] = {0};
-	int length;
+	char wakelock_name[52];
 
 	// if debug mode on, print every wakelock requested
 	if (wl_blocker_debug)
@@ -467,39 +461,25 @@ static bool check_for_block(struct wakeup_source *ws)
 	if (!wl_blocker_active)
 		return false;
 
-	// only if ws structure is valid
+	// check if wakelock is in wake lock list to be blocked
 	if (ws)
 	{
-		// wake lock names handled have maximum length=50 and minimum=1
-		length = strlen(ws->name);
-		if ((length > 50) || (length < 1))
+		// wake lock names which are longer than 50 chars are not handled
+		if (strlen(ws->name) > 50)
 			return false;
 
-		// check if wakelock is in wake lock list to be blocked
 		sprintf(wakelock_name, ";%s;", ws->name);
 
 		if(strstr(list_wl_search, wakelock_name) == NULL)
 			return false;
-
-		// wake lock is in list, print it if debug mode on
-		if (wl_blocker_debug)
-			printk("Boeffla WL blocker: %s blocked\n", ws->name);
-
-		// if it is currently active, deactivate it immediately + log in debug mode
-		if (ws->active)
-		{
-			wakeup_source_deactivate(ws);
-
-			if (wl_blocker_debug)
-				printk("Boeffla WL blocker: %s killed\n", ws->name);
-		}
-
-		// finally block it
-		return true;
 	}
 
-	// there was no valid ws structure, do not block by default
-	return false;
+	// wake lock is in list, print it if debug mode on
+	if (wl_blocker_debug)
+		printk("Boeffla WL blocker: %s blocked\n", ws->name);
+
+	// finally block it
+	return true;
 }
 #endif
 
@@ -842,7 +822,6 @@ bool pm_wakeup_pending(void)
 {
 	unsigned long flags;
 	bool ret = false;
-	char suspend_abort[MAX_SUSPEND_ABORT_LEN];
 
 	spin_lock_irqsave(&events_lock, flags);
 	if (events_check_enabled) {
@@ -856,10 +835,7 @@ bool pm_wakeup_pending(void)
 
 	if (ret) {
 		pr_info("PM: Wakeup pending, aborting suspend\n");
-		pm_get_active_wakeup_sources(suspend_abort,
-					     MAX_SUSPEND_ABORT_LEN);
-		log_suspend_abort_reason(suspend_abort);
-		pr_info("PM: %s\n", suspend_abort);
+		pm_print_active_wakeup_sources();
 	}
 
 	return ret || pm_abort_suspend;
