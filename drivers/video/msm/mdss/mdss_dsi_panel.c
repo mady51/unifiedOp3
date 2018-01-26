@@ -27,7 +27,6 @@
 #include <linux/uaccess.h>
 #include <linux/msm_mdp.h>
 
-#include "mdss_livedisplay.h"
 #include <linux/display_state.h>
 #include "mdss_dsi.h"
 #ifdef TARGET_HW_MDSS_HDMI
