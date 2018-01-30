@@ -1121,6 +1121,9 @@ static ssize_t store_min_sample_time(struct cpufreq_interactive_tunables
 	int ret;
 	unsigned long val;
 
+	if (!is_perfd(current->comm))
+		return;
+
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
