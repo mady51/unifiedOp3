@@ -119,7 +119,6 @@ struct cpufreq_policy {
 
 	/* For cpufreq driver's internal use */
 	void			*driver_data;
-	unsigned int util;
 };
 
 /* Only for ACPI */
@@ -283,8 +282,6 @@ struct cpufreq_driver {
 
 	struct freq_attr **attr;
 	/* optional */
-	unsigned int (*getavg)	(struct cpufreq_policy *policy,
-                            unsigned int cpu);
 
 	/* platform specific boost support code */
 	bool		boost_supported;
