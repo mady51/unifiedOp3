@@ -280,6 +280,9 @@ static bool update_load(int cpu)
 	u64 delta_time;
 	bool ignore = false;
 
+	if (!cpu_online(cpu))
+		return true;
+
 	now_idle = get_cpu_idle_time(cpu, &now, tunables->io_is_busy);
 	delta_idle = (now_idle - pcpu->time_in_idle);
 	delta_time = (now - pcpu->time_in_idle_timestamp);
@@ -352,8 +355,6 @@ static void cpufreq_alucard_timer(unsigned long data)
 
 	max_cpu = cpumask_first(ppol->policy->cpus);
 	for_each_cpu(i, ppol->policy->related_cpus) {
-		if (!cpu_online(i))
-			continue;
 		if (update_load(i))
 			continue;
 		pcpu = &per_cpu(cpuinfo, i);
@@ -372,7 +373,6 @@ static void cpufreq_alucard_timer(unsigned long data)
 		calc_load /= n;
 	spin_unlock_irqrestore(&ppol->load_lock, flags);
 
-#if defined(CONFIG_MSM_PERFORMANCE) || defined(CONFIG_SCHED_CORE_CTL)
 	/*
 	 * Send govinfo notification.
 	 * Govinfo notification could potentially wake up another thread
@@ -388,7 +388,6 @@ static void cpufreq_alucard_timer(unsigned long data)
 		atomic_notifier_call_chain(&cpufreq_govinfo_notifier_list,
 					   CPUFREQ_LOAD_CHANGE, &govinfo);
 	}
-#endif
 
 	/* Check for frequency increase or for frequency decrease */
 	spin_lock_irqsave(&ppol->target_freq_lock, flags);
