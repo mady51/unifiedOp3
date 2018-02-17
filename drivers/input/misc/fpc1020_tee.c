@@ -52,7 +52,6 @@ struct fpc1020_data {
 	struct notifier_block fb_notif;
 	struct completion irq_sent;
 	struct work_struct pm_work;
-	struct wakeup_source ttw_ws;
 	spinlock_t irq_lock;
 
 	bool irq_disabled;
@@ -320,7 +319,7 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *dev_id)
 	wait_for_completion_timeout(&f->irq_sent, msecs_to_jiffies(100));
 
 	if (f->screen_off)
-		__pm_wakeup_event(&f->ttw_ws, FPC_TTW_HOLD_TIME_MS);
+		pm_wakeup_event(f->dev, FPC_TTW_HOLD_TIME_MS);
 
 	/* Report button input to trigger CPU boost */
 /*	input_report_key(fpc1020->input_dev, KEY_FINGERPRINT, 1);
@@ -371,7 +370,6 @@ static int fpc1020_probe(struct platform_device *pdev)
 	spin_lock_init(&f->irq_lock);
 	INIT_WORK(&f->pm_work, fpc1020_suspend_resume);
 	init_completion(&f->irq_sent);
-	wakeup_source_init(&f->ttw_ws, "fpc_ttw_ws");
 
 	ret = sysfs_create_group(&dev->kobj, &fpc1020_attr_group);
 	if (ret) {
@@ -405,6 +403,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 
 	gpio_direction_input(f->irq_gpio);
 	gpio_direction_output(f->vdd_en_gpio, 1);
+	device_init_wakeup(dev, true);
 
 	return 0;
 err4:
