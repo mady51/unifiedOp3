@@ -2163,7 +2163,7 @@ int __cpufreq_driver_target(struct cpufreq_policy *policy,
 	 */
 	if (target_freq == policy->cur)
 		retval = 0;
-
+out:
 	return retval;
 }
 EXPORT_SYMBOL_GPL(__cpufreq_driver_target);
