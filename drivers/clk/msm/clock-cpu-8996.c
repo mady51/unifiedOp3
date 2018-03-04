@@ -1513,8 +1513,8 @@ module_exit(cpu_clock_8996_exit);
 #define HF_MUX_SEL_LF_MUX 0x1
 #define LF_MUX_SEL_ALT_PLL 0x1
 
-#define PWRCL_EARLY_BOOT_RATE 1286400000
-#define PERFCL_EARLY_BOOT_RATE 1363200000
+#define PWRCL_EARLY_BOOT_RATE 1324800000
+#define PERFCL_EARLY_BOOT_RATE 1632000000
 
 static int use_alt_pll;
 module_param(use_alt_pll, int, 0444);
