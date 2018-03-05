@@ -99,8 +99,13 @@
 		qcom,mdss-pan-physical-width-dimension = <68>;
 		qcom,mdss-pan-physical-height-dimension = <122>;
 		qcom,mdss-tear-check-frame-rate=<6000>;
-		qcom,partial-update-enabled;
-		qcom,panel-roi-alignment = <360 64 360 64 360 64>;
+		//qcom,mdss-tear-check-sync-cfg-height = <1932>; /* Height + VBP + VFP + VSW */
+		//qcom,mdss-tear-check-sync-init-val= <1920>; /* Height */
+	       // qcom,mdss-tear-check-sync-threshold-start = <4>;
+	       // qcom,mdss-tear-check-sync-threshold-continue = <4>;
+	       // qcom,mdss-tear-check-start-pos= <1920>; /* Height */
+	       // qcom,mdss-tear-check-rd-ptr-trigger-intr= <1921>; /* Height + 1 */
+
 		qcom,ulps-enabled;
 		qcom,panel-allow-phy-poweroff;
 
