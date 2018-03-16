@@ -5460,6 +5460,90 @@ static irqreturn_t fg_mem_avail_irq_handler(int irq, void *_chip)
 	return IRQ_HANDLED;
 }
 
+static irqreturn_t fg_soc_irq_handler(int irq, void *_chip)
+{
+	struct fg_chip *chip = _chip;
+	u8 soc_rt_sts;
+	int rc, msoc;
+
+	rc = fg_read(chip, &soc_rt_sts, INT_RT_STS(chip->soc_base), 1);
+	if (rc) {
+		pr_err("spmi read failed: addr=%03X, rc=%d\n",
+				INT_RT_STS(chip->soc_base), rc);
+	}
+
+	if (fg_debug_mask & FG_IRQS)
+		pr_info("triggered 0x%x\n", soc_rt_sts);
+
+	if (chip->dischg_gain.enable) {
+		fg_stay_awake(&chip->dischg_gain_wakeup_source);
+		schedule_work(&chip->dischg_gain_work);
+	}
+
+	if (chip->soc_slope_limiter_en) {
+		fg_stay_awake(&chip->slope_limit_wakeup_source);
+		schedule_work(&chip->slope_limiter_work);
+	}
+
+	/* Backup last soc every delta soc interrupt */
+	chip->use_last_soc = false;
+	if (fg_reset_on_lockup) {
+		if (!chip->ima_error_handling)
+			chip->last_soc = get_monotonic_soc_raw(chip);
+		if (fg_debug_mask & FG_STATUS)
+			pr_info("last_soc: %d\n", chip->last_soc);
+
+		fg_stay_awake(&chip->cc_soc_wakeup_source);
+		schedule_work(&chip->cc_soc_store_work);
+	}
+
+	if (chip->use_vbat_low_empty_soc) {
+		msoc = get_monotonic_soc_raw(chip);
+		if (msoc == 0 || chip->soc_empty) {
+			fg_stay_awake(&chip->empty_check_wakeup_source);
+			schedule_delayed_work(&chip->check_empty_work,
+				msecs_to_jiffies(FG_EMPTY_DEBOUNCE_MS));
+		}
+	}
+
+	schedule_work(&chip->battery_age_work);
+
+	if (chip->power_supply_registered)
+		power_supply_changed(&chip->bms_psy);
+
+	if (chip->rslow_comp.chg_rs_to_rslow > 0 &&
+			chip->rslow_comp.chg_rslow_comp_c1 > 0 &&
+			chip->rslow_comp.chg_rslow_comp_c2 > 0)
+		schedule_work(&chip->rslow_comp_work);
+
+	if (chip->cyc_ctr.en)
+		schedule_work(&chip->cycle_count_work);
+
+	schedule_work(&chip->update_esr_work);
+
+	if (chip->charge_full)
+		schedule_work(&chip->charge_full_work);
+
+	if (chip->wa_flag & IADC_GAIN_COMP_WA
+			&& chip->iadc_comp_data.gain_active) {
+		fg_stay_awake(&chip->gain_comp_wakeup_source);
+		schedule_work(&chip->gain_comp_work);
+	}
+
+	if (chip->wa_flag & USE_CC_SOC_REG
+			&& chip->learning_data.active) {
+		fg_stay_awake(&chip->capacity_learning_wakeup_source);
+		schedule_work(&chip->fg_cap_learning_work);
+	}
+
+	if (chip->esr_pulse_tune_en) {
+		fg_stay_awake(&chip->esr_extract_wakeup_source);
+		schedule_work(&chip->esr_extract_config_work);
+	}
+
+	return IRQ_HANDLED;
+}
+
 static irqreturn_t fg_empty_soc_irq_handler(int irq, void *_chip)
 {
 	struct fg_chip *chip = _chip;
