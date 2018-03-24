@@ -415,7 +415,7 @@ int __ref cpu_down(unsigned int cpu)
 {
 	int err;
 
-	/* kthreads and workqueues require CPU0 to stay online */
+	/* kthreads require one little-cluster CPU to stay online */
 	if (!cpu)
 		return -EINVAL;
 
