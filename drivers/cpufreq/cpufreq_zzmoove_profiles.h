@@ -953,7 +953,7 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		55,		// down_threshold_hotplug6
 		55,		// down_threshold_hotplug7
 #endif /* (MAX_CORES == 8) */
-		422400,		// down_threshold_hotplug_freq1
+		307200,		// down_threshold_hotplug_freq1
 #if (MAX_CORES == 4 || MAX_CORES == 6 || MAX_CORES == 8)
 		652800,		// down_threshold_hotplug_freq2
 		1574400,	// down_threshold_hotplug_freq3
@@ -1083,7 +1083,7 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		68,		// up_threshold_hotplug6
 		68,		// up_threshold_hotplug7
 #endif /* (MAX_CORES == 8) */
-		422400,		// up_threshold_hotplug_freq1
+		307200,		// up_threshold_hotplug_freq1
 #if (MAX_CORES == 4 || MAX_CORES == 6 || MAX_CORES == 8)
 		1497600,	// up_threshold_hotplug_freq2
 		1728000,	// up_threshold_hotplug_freq3
@@ -1129,7 +1129,7 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		55,		// down_threshold_hotplug6
 		55,		// down_threshold_hotplug7
 #endif /* (MAX_CORES == 8) */
-		422400,		// down_threshold_hotplug_freq1
+		307200,		// down_threshold_hotplug_freq1
 #if (MAX_CORES == 4 || MAX_CORES == 6 || MAX_CORES == 8)
 		883200,		// down_threshold_hotplug_freq2
 		1190400,	// down_threshold_hotplug_freq3
@@ -1221,7 +1221,7 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		0,		// scaling_fastdown_freq
 		95,		// scaling_fastdown_up_threshold
 		90,		// scaling_fastdown_down_threshold
-		422400,		// scaling_responsiveness_freq
+		307200,		// scaling_responsiveness_freq
 		0,		// scaling_responsiveness_up_threshold
 		0,		// scaling_proportional
 #ifdef ENABLE_INPUTBOOSTER
@@ -1434,7 +1434,7 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		68,		// up_threshold_hotplug6
 		68,		// up_threshold_hotplug7
 #endif /* (MAX_CORES == 8) */
-		422400,		// up_threshold_hotplug_freq1
+		307200,		// up_threshold_hotplug_freq1
 #if (MAX_CORES == 4 || MAX_CORES == 6 || MAX_CORES == 8)
 		0,		// up_threshold_hotplug_freq2
 		0,		// up_threshold_hotplug_freq3
@@ -1609,7 +1609,7 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		68,		// up_threshold_hotplug6
 		68,		// up_threshold_hotplug7
 #endif /* (MAX_CORES == 8) */
-		422400,		// up_threshold_hotplug_freq1
+		307200,		// up_threshold_hotplug_freq1
 #if (MAX_CORES == 4 || MAX_CORES == 6 || MAX_CORES == 8)
 		1267200,	// up_threshold_hotplug_freq2
 		1728000,	// up_threshold_hotplug_freq3
@@ -1784,7 +1784,7 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		68,		// up_threshold_hotplug6
 		68,		// up_threshold_hotplug7
 #endif /* (MAX_CORES == 8) */
-		422400,		// up_threshold_hotplug_freq1
+		307200,		// up_threshold_hotplug_freq1
 #if (MAX_CORES == 4 || MAX_CORES == 6 || MAX_CORES == 8)
 		1267200,	// up_threshold_hotplug_freq2
 		1728000,	// up_threshold_hotplug_freq3
@@ -1829,7 +1829,7 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		55,		// down_threshold_hotplug6
 		55,		// down_threshold_hotplug7
 #endif /* (MAX_CORES == 8) */
-		422400,		// down_threshold_hotplug_freq1
+		307200,		// down_threshold_hotplug_freq1
 #if (MAX_CORES == 4 || MAX_CORES == 6 || MAX_CORES == 8)
 		1190400,	// down_threshold_hotplug_freq2
 		1574400,	// down_threshold_hotplug_freq3
@@ -2136,7 +2136,7 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		68,		// up_threshold_hotplug6
 		68,		// up_threshold_hotplug7
 #endif /* (MAX_CORES == 8) */
-		422400,		// up_threshold_hotplug_freq1
+		307200,		// up_threshold_hotplug_freq1
 #if (MAX_CORES == 4 || MAX_CORES == 6 || MAX_CORES == 8)
 		1036800,	// up_threshold_hotplug_freq2
 		1574400,	// up_threshold_hotplug_freq3
