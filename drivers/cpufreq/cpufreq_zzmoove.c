@@ -102,11 +102,11 @@
 // ZZ: include profiles header file and set name for 'custom' profile (informational for a changed profile value)
 #ifdef ENABLE_PROFILES_SUPPORT
 #include "cpufreq_zzmoove_profiles.h"
-#define DEF_PROFILE_NUMBER				(1)	// ZZ: default profile number (profile = 0 = 'none' = tuneable mode)
+#define DEF_PROFILE_NUMBER				(7)	// ZZ: default profile number (profile = 0 = 'none' = tuneable mode)
 static char custom_profile[20] = "custom";			// ZZ: name to show in sysfs if any profile value has changed
 
 // ff: allows tuneables to be tweaked without reverting to "custom" profile
-#define DEF_PROFILE_STICKY_MODE				(1)
+//#define DEF_PROFILE_STICKY_MODE				(1)
 #endif /* ENABLE_PROFILES_SUPPORT */
 
 // Yank: enable/disable debugging code
@@ -749,7 +749,7 @@ static struct dbs_tuners {
 #ifdef ENABLE_PROFILES_SUPPORT
 	.profile = "none",
 	.profile_number = DEF_PROFILE_NUMBER,
-	.profile_sticky_mode = DEF_PROFILE_STICKY_MODE,
+	//.profile_sticky_mode = DEF_PROFILE_STICKY_MODE,
 #endif /* ENABLE_PROFILES_SUPPORT */
 #ifdef ENABLE_AUTO_ADJUST_FREQ
 	.auto_adjust_freq_thresholds = DEF_AUTO_ADJUST_FREQ,
