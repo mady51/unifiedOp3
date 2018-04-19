@@ -59,7 +59,7 @@ static void __msm_zen_dec_suspend(struct work_struct *work)
 
 	for_each_online_cpu(cpu) {
 		/* Don't call cpu_down if cpu0 */
-		if (cpu == 0) continue;
+		if (cpu == 0 && cpu == 1) continue;
 		mutex_lock(&per_cpu(msm_zen_decision_off, cpu).core_mutex);
 		cpu_down(cpu);
 		per_cpu(msm_zen_decision_off, cpu).screen_off = true;
