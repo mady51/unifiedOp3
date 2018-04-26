@@ -277,10 +277,10 @@ static void fpc1020_suspend_resume(struct work_struct *work)
 
 	/* Escalate fingerprintd priority when screen is off */
 	if (f->screen_off) {
-		set_fingerprint_hal_nice(MIN_NICE);
+		set_fingerprint_hal_nice(0);
 	} else {
 		set_fpc_irq(f, true);
-		set_fingerprint_hal_nice(0);
+		set_fingerprint_hal_nice(-1);
 	}
 
 	sysfs_notify(&f->dev->kobj, NULL, dev_attr_screen_state.attr.name);
