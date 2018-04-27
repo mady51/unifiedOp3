@@ -41,6 +41,8 @@
 #include <linux/platform_device.h>
 #include <linux/pm_wakeup.h>
 
+#define KEY_FINGERPRINT 0x2ee
+
 #define FPC1020_RESET_LOW_US	(1000)
 #define FPC1020_RESET_HIGH1_US	(100)
 #define FPC1020_RESET_HIGH2_US	(1250)
@@ -116,6 +118,7 @@ static int fpc1020_input_init(struct fpc1020_data *f)
 	if (!f->input_dev) {
 		dev_err(f->dev, "Input_allocate_device failed.\n");
 		return -ENOMEM;
+		goto exit;
 	}
 
 	f->input_dev->name = "fpc1020";
@@ -126,9 +129,14 @@ static int fpc1020_input_init(struct fpc1020_data *f)
 	ret = input_register_device(f->input_dev);
 	if (ret) {
 		dev_err(f->dev, "Input_register_device failed.\n");
-		input_free_device(f->input_dev);
+		goto err_free_dev;		
+//		input_free_device(f->input_dev);
 	}
 
+	return 0;
+err_free_dev:
+input_free_device(f->input_dev);
+exit:
 	return ret;
 }
 
@@ -322,11 +330,11 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *dev_id)
 		pm_wakeup_event(f->dev, FPC_TTW_HOLD_TIME_MS);
 
 	/* Report button input to trigger CPU boost */
-/*	input_report_key(fpc1020->input_dev, KEY_FINGERPRINT, 1);
-	input_sync(fpc1020->input_dev);
-	input_report_key(fpc1020->input_dev, KEY_FINGERPRINT, 0);
-	input_sync(fpc1020->input_dev);
-*/
+	input_report_key(f->input_dev, KEY_FINGERPRINT, 1);
+	input_sync(f->input_dev);
+	input_report_key(f->input_dev, KEY_FINGERPRINT, 0);
+	input_sync(f->input_dev);
+
 	return IRQ_HANDLED;
 }
 
