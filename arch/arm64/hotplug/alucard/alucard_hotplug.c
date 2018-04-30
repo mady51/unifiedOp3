@@ -479,31 +479,19 @@ static ssize_t show_##file_name		\
 
 show_pcpu_param(hotplug_freq_1_1, up_freq, 1);
 show_pcpu_param(hotplug_freq_2_1, up_freq, 2);
-show_pcpu_param(hotplug_freq_3_1, up_freq, 3);
 show_pcpu_param(hotplug_freq_2_0, down_freq, 2);
-show_pcpu_param(hotplug_freq_3_0, down_freq, 3);
-show_pcpu_param(hotplug_freq_4_0, down_freq, 4);
 
 show_pcpu_param(hotplug_load_1_1, up_load, 1);
 show_pcpu_param(hotplug_load_2_1, up_load, 2);
-show_pcpu_param(hotplug_load_3_1, up_load, 3);
 show_pcpu_param(hotplug_load_2_0, down_load, 2);
-show_pcpu_param(hotplug_load_3_0, down_load, 3);
-show_pcpu_param(hotplug_load_4_0, down_load, 4);
 
 show_pcpu_param(hotplug_rq_1_1, up_rq, 1);
 show_pcpu_param(hotplug_rq_2_1, up_rq, 2);
-show_pcpu_param(hotplug_rq_3_1, up_rq, 3);
 show_pcpu_param(hotplug_rq_2_0, down_rq, 2);
-show_pcpu_param(hotplug_rq_3_0, down_rq, 3);
-show_pcpu_param(hotplug_rq_4_0, down_rq, 4);
 
 show_pcpu_param(hotplug_rate_1_1, up_rate, 1);
 show_pcpu_param(hotplug_rate_2_1, up_rate, 2);
-show_pcpu_param(hotplug_rate_3_1, up_rate, 3);
 show_pcpu_param(hotplug_rate_2_0, down_rate, 2);
-show_pcpu_param(hotplug_rate_3_0, down_rate, 3);
-show_pcpu_param(hotplug_rate_4_0, down_rate, 4);
 
 #define store_pcpu_param(file_name, var_name, num_core)		\
 static ssize_t store_##file_name		\
@@ -530,59 +518,35 @@ static ssize_t store_##file_name		\
 
 store_pcpu_param(hotplug_freq_1_1, up_freq, 1);
 store_pcpu_param(hotplug_freq_2_1, up_freq, 2);
-store_pcpu_param(hotplug_freq_3_1, up_freq, 3);
 store_pcpu_param(hotplug_freq_2_0, down_freq, 2);
-store_pcpu_param(hotplug_freq_3_0, down_freq, 3);
-store_pcpu_param(hotplug_freq_4_0, down_freq, 4);
 
 store_pcpu_param(hotplug_load_1_1, up_load, 1);
 store_pcpu_param(hotplug_load_2_1, up_load, 2);
-store_pcpu_param(hotplug_load_3_1, up_load, 3);
 store_pcpu_param(hotplug_load_2_0, down_load, 2);
-store_pcpu_param(hotplug_load_3_0, down_load, 3);
-store_pcpu_param(hotplug_load_4_0, down_load, 4);
 
 store_pcpu_param(hotplug_rq_1_1, up_rq, 1);
 store_pcpu_param(hotplug_rq_2_1, up_rq, 2);
-store_pcpu_param(hotplug_rq_3_1, up_rq, 3);
 store_pcpu_param(hotplug_rq_2_0, down_rq, 2);
-store_pcpu_param(hotplug_rq_3_0, down_rq, 3);
-store_pcpu_param(hotplug_rq_4_0, down_rq, 4);
 
 store_pcpu_param(hotplug_rate_1_1, up_rate, 1);
 store_pcpu_param(hotplug_rate_2_1, up_rate, 2);
-store_pcpu_param(hotplug_rate_3_1, up_rate, 3);
 store_pcpu_param(hotplug_rate_2_0, down_rate, 2);
-store_pcpu_param(hotplug_rate_3_0, down_rate, 3);
-store_pcpu_param(hotplug_rate_4_0, down_rate, 4);
 
 define_one_global_rw(hotplug_freq_1_1);
 define_one_global_rw(hotplug_freq_2_0);
 define_one_global_rw(hotplug_freq_2_1);
-define_one_global_rw(hotplug_freq_3_0);
-define_one_global_rw(hotplug_freq_3_1);
-define_one_global_rw(hotplug_freq_4_0);
 
 define_one_global_rw(hotplug_load_1_1);
 define_one_global_rw(hotplug_load_2_0);
 define_one_global_rw(hotplug_load_2_1);
-define_one_global_rw(hotplug_load_3_0);
-define_one_global_rw(hotplug_load_3_1);
-define_one_global_rw(hotplug_load_4_0);
 
 define_one_global_rw(hotplug_rq_1_1);
 define_one_global_rw(hotplug_rq_2_0);
 define_one_global_rw(hotplug_rq_2_1);
-define_one_global_rw(hotplug_rq_3_0);
-define_one_global_rw(hotplug_rq_3_1);
-define_one_global_rw(hotplug_rq_4_0);
 
 define_one_global_rw(hotplug_rate_1_1);
 define_one_global_rw(hotplug_rate_2_0);
 define_one_global_rw(hotplug_rate_2_1);
-define_one_global_rw(hotplug_rate_3_0);
-define_one_global_rw(hotplug_rate_3_1);
-define_one_global_rw(hotplug_rate_4_0);
 
 static void cpus_hotplugging(int status) {
 	int ret = 0;
@@ -790,27 +754,15 @@ static struct attribute *alucard_hotplug_attributes[] = {
 	&hotplug_freq_1_1.attr,
 	&hotplug_freq_2_0.attr,
 	&hotplug_freq_2_1.attr,
-	&hotplug_freq_3_0.attr,
-	&hotplug_freq_3_1.attr,
-	&hotplug_freq_4_0.attr,
 	&hotplug_load_1_1.attr,
 	&hotplug_load_2_0.attr,
 	&hotplug_load_2_1.attr,
-	&hotplug_load_3_0.attr,
-	&hotplug_load_3_1.attr,
-	&hotplug_load_4_0.attr,
 	&hotplug_rq_1_1.attr,
 	&hotplug_rq_2_0.attr,
 	&hotplug_rq_2_1.attr,
-	&hotplug_rq_3_0.attr,
-	&hotplug_rq_3_1.attr,
-	&hotplug_rq_4_0.attr,
 	&hotplug_rate_1_1.attr,
 	&hotplug_rate_2_0.attr,
 	&hotplug_rate_2_1.attr,
-	&hotplug_rate_3_0.attr,
-	&hotplug_rate_3_1.attr,
-	&hotplug_rate_4_0.attr,
 	&min_cpus_online.attr,
 	&maxcoreslimit.attr,
 	&maxcoreslimit_sleep.attr,
