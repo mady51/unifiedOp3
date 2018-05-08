@@ -1240,6 +1240,9 @@ static int ep_create_wakeup_source(struct epitem *epi)
 {
 	const char *name;
 	struct wakeup_source *ws;
+	char task_comm_buf[TASK_COMM_LEN];
+
+	get_task_comm(task_comm_buf, current);
 
 	name = epi->ffd.file->f_path.dentry->d_name.name;
 	if (!epi->ep->ws) {
