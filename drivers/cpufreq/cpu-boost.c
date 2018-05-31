@@ -39,10 +39,10 @@ static bool input_boost_enabled;
 static unsigned int input_boost_ms = 40;
 module_param(input_boost_ms, uint, 0644);
 
-#ifdef CONFIG_DYNAMIC_STUNE_BOOST
-static int dynamic_stune_boost;
-module_param(dynamic_stune_boost, uint, 0644);
-#endif /* CONFIG_DYNAMIC_STUNE_BOOST */
+static bool sched_boost_on_input;
+module_param(sched_boost_on_input, bool, 0644);
+
+static bool sched_boost_active;
 
 static struct delayed_work input_boost_rem;
 static u64 last_input_time;
@@ -194,11 +194,6 @@ static void do_input_boost_rem(struct work_struct *work)
 		i_sync_info = &per_cpu(sync_info, i);
 		i_sync_info->input_boost_min = 0;
 	}
-
-#ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	/* Reset dynamic stune boost value to the default value */
-	reset_stune_boost("top-app");
-#endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 	/* Update policies for all online CPUs */
 	update_policy_online();
