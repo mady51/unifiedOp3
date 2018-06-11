@@ -84,10 +84,7 @@
  */
 #define MDP_TIME_PERIOD_CALC_FPS_US	1000000
 #define MDSS_BRIGHT_TO_BL_DIM(out, v) do {\
-			if (v < 5)\
-				out = 1;\
-			else if (v < 15)\
-				out = v / 2;\
+			out = (12*v*v+1393*v+3060)/4465;\
 			} while (0)
 bool backlight_dimmer = false;
 module_param(backlight_dimmer, bool, 0755);
