@@ -1373,6 +1373,12 @@ config DYNAMIC_STUNE_BOOST
 
 	  If unsure, say N.
 
+config SCHEDTUNE_ASSIST
+	bool "Simple driver for setting up stune boost on boot"
+	depends on DYNAMIC_STUNE_BOOST
+	help
+	  Driver for setting SchedTune boost values without using ramdisk.
+
 config DEFAULT_USE_ENERGY_AWARE
 	bool "Default to enabling the Energy Aware Scheduler feature"
 	default n

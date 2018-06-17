@@ -3348,6 +3348,10 @@ void cpufreq_remove_update_util_hook(int cpu);
 int do_stune_boost(char *st_name, int boost);
 int reset_stune_boost(char *st_name);
 int set_stune_value(char *st_name, int boost);
+#ifdef CONFIG_SCHEDTUNE_ASSIST
+void assist_init(void);
+void assist_remove(void);
+#endif /* CONFIG_SCHEDTUNE_ASSIST */
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 #endif
