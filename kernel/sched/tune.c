@@ -871,6 +871,23 @@ int reset_stune_boost(char *st_name)
 
 	return ret;
 }
+
+int set_stune_value(char *st_name, int boost)
+{
+	int ret = 0;
+	struct schedtune *st = getSchedtune(st_name);
+
+	if (!st)
+		return -EINVAL;
+
+	mutex_lock(&stune_boost_mutex);
+
+	ret = dynamic_boost_write(st, boost);
+
+	mutex_unlock(&stune_boost_mutex);
+
+	return ret;
+}
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 #else /* CONFIG_CGROUP_SCHEDTUNE */

@@ -3347,6 +3347,7 @@ void cpufreq_remove_update_util_hook(int cpu);
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 int do_stune_boost(char *st_name, int boost);
 int reset_stune_boost(char *st_name);
+int set_stune_value(char *st_name, int boost);
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 #endif
