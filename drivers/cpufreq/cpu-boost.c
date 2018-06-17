@@ -87,6 +87,10 @@ static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 		cp++;
 	}
 
+#ifdef CONFIG_SCHEDTUNE_ASSIST
+	assist_init();
+#endif /* CONFIG_SCHEDTUNE_ASSIST */
+
 check_enable:
 	for_each_possible_cpu(i) {
 		if (per_cpu(sync_info, i).input_boost_freq) {
