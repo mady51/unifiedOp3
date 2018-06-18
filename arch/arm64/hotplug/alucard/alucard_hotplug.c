@@ -74,7 +74,7 @@ static struct hotplug_tuners {
 #ifdef CONFIG_STATE_NOTIFIER
 	.hotplug_suspend = 0,
 	.suspended = false,
-	.force_cpu_up = false,
+	.force_cpu_up = true,
 #endif
 };
 
