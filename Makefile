@@ -294,7 +294,6 @@ export KCONFIG_CONFIG
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
-GRAPHITE = -fgraphite -fgraphite-identity -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -ftree-loop-linear -floop-nest-optimize -floop-parallelize-all
 GENERAL_OPT	=  -fforce-addr -fsched-spec-load
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
@@ -305,8 +304,7 @@ KERNELFLAGS	:= -mcpu=cortex-a15 -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 \
 		   -fsingle-precision-constant -mvectorize-with-neon-quad \
    		   -munaligned-access -fsched-spec-load -ftree-vectorize \
    		   -fvect-cost-model=dynamic -fpredictive-commoning \
-   		   -finline-functions -findirect-inlining \
-   		   $(GRAPHITE)
+   		   -finline-functions -findirect-inlining
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
 HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
 		-Wno-missing-field-initializers -fno-delete-null-pointer-checks
