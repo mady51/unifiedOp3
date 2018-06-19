@@ -1877,6 +1877,7 @@ static void qpnp_flash_led_brightness_set(struct led_classdev *led_cdev,
 }
 
 /* lancelot add for mi flashlight*/
+/*
 static void mido_flash_led_brightness_set(struct led_classdev *led_cdev,
 						enum led_brightness value)
 {
@@ -1884,6 +1885,7 @@ static void mido_flash_led_brightness_set(struct led_classdev *led_cdev,
 	qpnp_flash_led_brightness_set(led_cdev, value);
 	led_trigger_event(flashlight_switch_trigger, (value?1:0));
 }
+*/
 /* lancelot add end*/
 
 static int qpnp_flash_led_init_settings(struct qpnp_flash_led *led)
@@ -2550,7 +2552,7 @@ static int qpnp_flash_led_probe(struct spmi_device *spmi)
 		}
 
 		if (!strncmp(led->flash_node[i].cdev.name, flashlight, strlen(flashlight))) {
-			led->flash_node[i].cdev.brightness_set = mido_flash_led_brightness_set;
+			led->flash_node[i].cdev.brightness_set = qpnp_flash_led_brightness_set;
 		}
 
 		rc = of_property_read_string(temp, "qcom,default-led-trigger",
