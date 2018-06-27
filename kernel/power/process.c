@@ -227,8 +227,8 @@ void thaw_fingerprintd(void)
 	WARN_ON((p != curr) && (p->flags & PF_SUSPEND_TASK));
 	if(!memcmp(p->comm, "fps_work", 9))
 		__thaw_task(p);
-	if(!memcmp(p->comm, "fingerprintmsg", 15))
-		__thaw_task(p);
+//	if(!memcmp(p->comm, "fingerprintmsg", 15))
+//		__thaw_task(p);
     }
     read_unlock(&tasklist_lock);
     pm_freezing = true;
